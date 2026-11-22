@@ -1,3 +1,8 @@
+## Team Responsibilities
+
+See [TEAM_TASKS.md](TEAM_TASKS.md) for each member's
+assigned tasks, progress, and integration requirements.
+
 # Distributed Multi-Branch Bank Management System
 SOFE4790U group project starter. **Educational simulation only**; not a real banking system.
 
