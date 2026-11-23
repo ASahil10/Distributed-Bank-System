@@ -139,7 +139,7 @@ and Muhammad on communication failures.
 ---
 
 ## Part 5 - 
-### Admin Dashboard and System Integration
+### Admin Dashboard and System Integration Hanzlah Imran
 
 Assigned folder: `dashboard/`
 
