@@ -1,97 +1,149 @@
 
 import unittest
-
+from unittest.mock import patch
 from branch_nodes import branch_server
-from branch_nodes.branch_config import get_branch_config
+from banking.service import BankingError
 
 
 class TestBranchServer(unittest.TestCase):
 
     def setUp(self):
-        # Create a test client without starting a real server
+        # Create a test client without starting the Flask server
         self.client = branch_server.app.test_client()
 
-        # Save the original branch information
-        self.original_state = branch_server.state.copy()
+        # Mock the banking service so tests don't change real data
+        patcher = patch.object(branch_server, "banking")
+        self.mock_banking = patcher.start()
+        self.addCleanup(patcher.stop)
 
-        # Set temporary values for testing
-        branch_server.state["cash"] = 10000
-        branch_server.state["minimum_reserve"] = 2000
-
-    def tearDown(self):
-        # Restore original values after each test
-        branch_server.state.clear()
-        branch_server.state.update(self.original_state)
-
-    def test_branch_config(self):
-        # Check that branches A, B and C exist
-        for branch_id in ["A", "B", "C"]:
-            config = get_branch_config(branch_id)
-
-            self.assertIn("cash", config)
-            self.assertIn("employees", config)
-            self.assertIn("minimum_reserve", config)
-
-    def test_invalid_branch(self):
-        # Branch D should not exist
-        with self.assertRaises(ValueError):
-            get_branch_config("D")
+        # Starting values for our test branch
+        self.mock_banking.get_status.return_value = {
+            "branch_id": "A",
+            "cash": 10000,
+            "employees": 5,
+            "minimum_reserve": 2000,
+            "reserve_warning": False
+        }
 
     def test_status(self):
-        # Check if the server returns its status
+        # Check if the branch status is returned correctly
         response = self.client.get("/status")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json["cash"], 10000)
+        self.assertEqual(response.get_json()["cash"], 10000)
+        self.assertEqual(response.get_json()["employees"], 5)
 
     def test_deposit(self):
-        # Deposit 500 cents into the branch
+        # Set the expected result of a successful deposit
+        self.mock_banking.deposit.return_value = {
+            "cash": 10500,
+            "tx_id": "test-deposit"
+        }
+
         response = self.client.post(
             "/deposit",
             json={"amount": 500}
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json["cash"], 10500)
+        self.assertEqual(response.get_json()["cash"], 10500)
 
-    def test_withdraw(self):
-        # Withdraw 500 cents from the branch
-        response = self.client.post(
-            "/withdraw",
-            json={"amount": 500}
+        self.mock_banking.deposit.assert_called_once_with(
+            amount=500,
+            tx_id=None,
+            note=""
         )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json["cash"], 9500)
-
-    def test_minimum_reserve(self):
-        # Try withdrawing too much money
-        response = self.client.post(
-            "/withdraw",
-            json={"amount": 9000}
-        )
-
-        # Withdrawal should be rejected
-        self.assertEqual(response.status_code, 409)
-        self.assertEqual(branch_server.state["cash"], 10000)
 
     def test_invalid_deposit(self):
-        # Negative deposits should not be allowed
+        # Negative deposit amounts should be rejected
         response = self.client.post(
             "/deposit",
             json={"amount": -100}
         )
 
         self.assertEqual(response.status_code, 400)
+        self.mock_banking.deposit.assert_not_called()
 
-    def test_invalid_withdraw(self):
-        # Zero-dollar withdrawals should not be allowed
+    def test_withdraw(self):
+        # Set the expected result of a successful withdrawal
+        self.mock_banking.withdraw.return_value = {
+            "cash": 9500,
+            "tx_id": "test-withdraw"
+        }
+
         response = self.client.post(
             "/withdraw",
-            json={"amount": 0}
+            json={"amount": 500}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["cash"], 9500)
+
+        self.mock_banking.withdraw.assert_called_once_with(
+            amount=500,
+            allow_below_reserve=False,
+            tx_id=None,
+            note=""
+        )
+
+    def test_invalid_withdraw(self):
+        # Negative withdrawal amounts should be rejected
+        response = self.client.post(
+            "/withdraw",
+            json={"amount": -500}
         )
 
         self.assertEqual(response.status_code, 400)
+        self.mock_banking.withdraw.assert_not_called()
+
+    def test_minimum_reserve(self):
+        # Simulate a withdrawal that breaks the reserve rule
+        self.mock_banking.withdraw.side_effect = BankingError(
+            "insufficient cash above minimum reserve"
+        )
+
+        response = self.client.post(
+            "/withdraw",
+            json={"amount": 9000}
+        )
+
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(
+            response.get_json()["error"],
+            "insufficient cash above minimum reserve"
+        )
+
+    def test_transactions(self):
+        # Check if the transactions endpoint works
+        self.mock_banking.get_transactions.return_value = []
+
+        response = self.client.get("/transactions")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["transactions"], [])
+
+        self.mock_banking.get_transactions.assert_called_once_with(
+            limit=50
+        )
+
+    def test_update_employees(self):
+        # Check if the employee count can be updated
+        self.mock_banking.set_employee_count.return_value = {
+            "branch_id": "A",
+            "employees": 8
+        }
+
+        response = self.client.put(
+            "/employees",
+            json={"employees": 8}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["employees"], 8)
+
+        self.mock_banking.set_employee_count.assert_called_once_with(
+            8
+        )
 
 
 if __name__ == "__main__":
