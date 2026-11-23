@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Branchline | Bank Operations</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/script.js" defer></script>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <a href="#overview" class="brand"><span class="brand-mark">B<span>✦</span></span><span>BRANCHLINE<small>OPERATIONS SUITE</small></span></a>
+    <div class="side-label">WORKSPACE</div>
+    <nav aria-label="Main navigation">
+      <a class="nav-link active" href="#overview"><span>▦</span> Overview</a>
+      <a class="nav-link" href="#branches"><span>▤</span> Branch network</a>
+      <a class="nav-link" href="#transactions"><span>⇄</span> Transactions</a>
+      <a class="nav-link" href="#health"><span>◈</span> System health</a>
+    </nav>
+    <div class="sidebar-bottom"><div class="avatar">AD</div><div><strong>Administrator</strong><small>Local monitoring console</small></div></div>
+  </aside>
+  <div class="workspace">
+    <header class="topbar"><div class="crumb">Workspace <span>/</span> <strong>Overview</strong></div><div class="top-actions"><span class="live-pill"><i></i> LIVE MONITORING</span><button id="refresh" class="outline-btn" type="button">↻ Refresh data</button></div></header>
+    <main>
+      <section id="overview" class="hero"><div><span class="eyebrow">DISTRIBUTED BANKING / CONTROL CENTER</span><h1>Good to see you, Admin <span class="sparkle">✳</span></h1><p>Monitor your branch network, transactions, and operational health in one place.</p></div><div class="hero-decoration" aria-hidden="true">✦</div></section>
+      <div class="section-heading"><div><span class="eyebrow dark">AT A GLANCE</span><h2>Network overview</h2></div><span id="updated" class="muted">Connecting to branches…</span></div>
+      <section class="metrics" aria-label="Network metrics">
+        <article class="metric"><div class="metric-top"><span>Total network cash</span><span class="metric-icon">＄</span></div><strong id="totalCash">—</strong><small>Across reachable branches</small></article>
+        <article class="metric"><div class="metric-top"><span>Branches online</span><span class="metric-icon">⌁</span></div><strong id="onlineCount">—</strong><small>Out of 3 configured branches</small></article>
+        <article class="metric"><div class="metric-top"><span>Total employees</span><span class="metric-icon">♙</span></div><strong id="employeeCount">—</strong><small>Across reachable branches</small></article>
+        <article class="metric"><div class="metric-top"><span>Reserve alerts</span><span class="metric-icon">⚑</span></div><strong id="alertCount">—</strong><small>Reported by online branches</small></article>
+      </section>
+      <section id="branches" class="content-section"><div class="section-heading"><div><span class="eyebrow dark">YOUR NETWORK</span><h2>Branch performance</h2></div><span class="subtle-tag">3 locations</span></div><div id="branchCards" class="branch-grid" aria-live="polite"></div></section>
+      <section class="bottom-grid"><div id="transactions" class="panel transaction-panel"><div class="panel-head"><div><span class="eyebrow dark">ACTIVITY</span><h2>Recent transactions</h2></div><span id="txCount" class="subtle-tag">0 records</span></div><div class="filters"><label class="search-wrap"><span>⌕</span><input id="search" placeholder="Search transactions…" aria-label="Search transactions"></label><select id="branchFilter" aria-label="Filter by branch"><option value="all">All branches</option><option value="A">Branch A</option><option value="B">Branch B</option><option value="C">Branch C</option></select><select id="typeFilter" aria-label="Filter by transaction type"><option value="all">All types</option><option value="deposit">Deposits</option><option value="withdraw">Withdrawals</option><option value="transfer">Transfers</option></select></div><div class="table-scroll"><table><thead><tr><th>BRANCH</th><th>TYPE</th><th>AMOUNT</th><th>STATUS</th><th>DATE</th></tr></thead><tbody id="transactionRows"><tr><td colspan="5" class="empty">Loading transactions…</td></tr></tbody></table></div></div>
+      <div id="health" class="panel health-panel"><div class="panel-head"><div><span class="eyebrow dark">MONITORING</span><h2>System health</h2></div><span class="health-symbol">✳</span></div><p class="health-intro">Real-time availability and reserve compliance across your branch network.</p><div id="healthList" class="health-list"></div><div class="health-note"><span>ⓘ</span><p>Updates every 5 seconds. Offline branches are excluded from network totals; reserve status cannot be verified while offline.</p></div></div></section>
+      <footer>BRANCHLINE <span>© 2026 · Distributed Banking Project · Admin Console</span></footer>
+    </main>
+  </div>
+</div>
+</body>
+</html>
