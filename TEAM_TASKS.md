@@ -55,7 +55,7 @@ configurable branch information and documented APIs.
 
 ---
 
-## Part 2 - Muhammad Saad
+## Part 2 - 
 ### Distributed Communication and Synchronization
 
 Assigned folder: `communication/`
@@ -81,7 +81,7 @@ and Burhanuddin on retries and duplicate processing.
 
 ---
 
-## Part 3 - Aditya Ramjas
+## Part 3 - 
 ### Banking Operations and Data Storage
 
 Assigned folder: `banking/`
@@ -109,7 +109,7 @@ Burhanuddin on transaction locking.
 
 ---
 
-## Part 4 - Burhanuddin Mohammed
+## Part 4 - 
 ### Concurrency Control and Fault Tolerance
 
 Assigned folder: `reliability/`
@@ -138,7 +138,7 @@ and Muhammad on communication failures.
 
 ---
 
-## Part 5 - Hanzlah Imran
+## Part 5 - 
 ### Admin Dashboard and System Integration
 
 Assigned folder: `dashboard/`
