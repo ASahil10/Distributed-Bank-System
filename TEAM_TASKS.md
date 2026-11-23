@@ -81,7 +81,7 @@ and Burhanuddin on retries and duplicate processing.
 
 ---
 
-## Part 3 - 
+## Part 3 - Burhanuddin Mohammed
 ### Banking Operations and Data Storage
 
 Assigned folder: `banking/`
