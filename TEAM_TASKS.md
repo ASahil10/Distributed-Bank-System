@@ -89,15 +89,15 @@ Assigned folder: `banking/`
 GitHub branch: `feature/banking-operations`
 
 ### Tasks
-- [ ] Create local SQLite database for each branch
-- [ ] Implement persistent cash balance storage
-- [ ] Implement deposit and withdrawal operations
-- [ ] Maintain transaction history
-- [ ] Enforce minimum cash reserve requirements
-- [ ] Track employee counts and staffing information
-- [ ] Implement banking rules for branch transfers
-- [ ] Integrate banking operations with Flask APIs
-- [ ] Test banking operations and persistence
+- [x] Create local SQLite database for each branch
+- [x] Implement persistent cash balance storage
+- [x] Implement deposit and withdrawal operations
+- [x] Maintain transaction history
+- [x] Enforce minimum cash reserve requirements
+- [x] Track employee counts and staffing information
+- [x] Implement banking rules for branch transfers
+- [x] Integrate banking operations with Flask APIs
+- [x] Test banking operations and persistence
 
 ### Expected Deliverable
 Banking transactions work correctly and branch
