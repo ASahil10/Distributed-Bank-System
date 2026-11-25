@@ -55,7 +55,7 @@ configurable branch information and documented APIs.
 
 ---
 
-## Part 2 - 
+## Part 2 - Aditya Ramjas
 ### Distributed Communication and Synchronization
 
 Assigned folder: `communication/`
