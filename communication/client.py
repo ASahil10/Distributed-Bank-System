@@ -10,6 +10,14 @@ class BranchCommunicationError(Exception):
     """Raised when a peer branch cannot complete a communication request."""
 
 
+class PeerRejectedError(BranchCommunicationError):
+    """Raised when a peer was reachable but refused the request (HTTP 4xx).
+
+    This is a definite answer: the peer did NOT apply the request. It lets the
+    reliability layer tell "peer said no" apart from "peer may be down".
+    """
+
+
 class BranchClient:
     """Sends idempotent HTTP messages to configured peer branch servers."""
 
@@ -65,7 +73,7 @@ class BranchClient:
 
                 # Client/business-rule errors should not be retried.
                 if 400 <= response.status_code < 500:
-                    raise BranchCommunicationError(
+                    raise PeerRejectedError(
                         body.get("error", f"Peer rejected request with HTTP {response.status_code}")
                     )
 

@@ -1,6 +1,7 @@
 
 """Independent bank branch server backed by SQLite persistence and peer communication."""
 import os
+import time
 
 from flask import Flask, jsonify, request
 
@@ -8,7 +9,10 @@ from branch_nodes.branch_config import get_branch_config
 from banking.database import BranchDatabase
 from banking.service import BankingError, BankingService
 from communication.client import BranchClient, BranchCommunicationError
-from communication.transfer_coordinator import TransferCoordinator
+from reliability.audit import local_audit
+from reliability.failure_detector import FailureDetector
+from reliability.recovery import RecoveryWorker
+from reliability.transfer_saga import COMPLETED, PENDING, TransferSaga
 
 app = Flask(__name__)
 
@@ -26,7 +30,21 @@ db = BranchDatabase(BRANCH_ID)
 db.seed_from_config(config)
 banking = BankingService(db)
 communication = BranchClient(BRANCH_URLS, timeout=3.0, max_retries=2)
-transfers = TransferCoordinator(BRANCH_ID, banking, communication)
+
+# Part 4: reliability. Background threads are only started in __main__,
+# so importing this module in tests does not spawn them.
+STARTED_AT = time.time()
+detector = FailureDetector(
+    BRANCH_ID,
+    BRANCH_URLS,
+    interval=float(os.getenv("HEARTBEAT_INTERVAL", "2.0")),
+    timeout=1.0,
+    suspect_after=1,
+    down_after=3,
+)
+transfers = TransferSaga(BRANCH_ID, db, communication, detector=detector)
+recovery = RecoveryWorker(transfers, interval=float(os.getenv("RECOVERY_INTERVAL", "5.0")))
+detector.on_recover = recovery.trigger
 
 
 @app.get("/status")
@@ -192,20 +210,56 @@ def transfer():
         return jsonify({"error": "tx_id must be a non-empty string"}), 400
 
     try:
-        result = transfers.transfer(
+        result = transfers.start(
             target_branch_id=target_branch_id,
             amount=amount,
             tx_id=tx_id,
         )
-        return jsonify(result)
     except BankingError as exc:
         message = str(exc)
         if "minimum reserve" in message or "insufficient cash" in message:
             return jsonify({"error": "insufficient cash above minimum reserve"}), 409
         return jsonify({"error": message}), 400
-    except BranchCommunicationError as exc:
-        return jsonify({"error": str(exc)}), 503
+
+    # 200 = delivered, 202 = debited and queued until the destination is back,
+    # 409 = destination rejected it and the source was refunded.
+    if result["status"] == COMPLETED:
+        return jsonify(result), 200
+    if result["status"] == PENDING:
+        return jsonify(result), 202
+    return jsonify(result), 409
+
+
+# Part 4: reliability endpoints.
+@app.get("/health")
+def health():
+    """Lightweight heartbeat target used by peers' failure detectors."""
+    return jsonify({"branch_id": BRANCH_ID, "alive": True, "started_at": STARTED_AT})
+
+
+@app.get("/cluster/health")
+def cluster_health():
+    """This branch's view of its peers: ONLINE / SUSPECTED / DOWN."""
+    return jsonify({"branch_id": BRANCH_ID, "peers": detector.snapshot()})
+
+
+@app.get("/transfers/pending")
+def pending_transfers():
+    return jsonify({"branch_id": BRANCH_ID, "pending": transfers.pending()})
+
+
+@app.post("/transfers/retry")
+def retry_transfers():
+    """Manually flush the outbox (the recovery worker also does this on its own)."""
+    return jsonify({"branch_id": BRANCH_ID, "results": transfers.retry_pending()})
+
+
+@app.get("/audit")
+def audit():
+    return jsonify(local_audit(db, initial_cash=config["cash"]))
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=PORT, debug=False)
+    detector.start()
+    recovery.start()  # first run also resumes transfers left PENDING by a crash
+    app.run(host="127.0.0.1", port=PORT, debug=False, threaded=True)
